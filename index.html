@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CarTracker - Fleet Scheduling System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="screen active">
+        <div class="login-container">
+            <h1>CarTracker Fleet Management</h1>
+            <p class="subtitle">Scheduling & Monitoring System</p>
+            
+            <div class="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter username" value="dispatcher">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter password" value="demo123">
+                </div>
+                
+                <div class="form-group">
+                    <label for="role">Role</label>
+                    <select id="role">
+                        <option value="dispatcher">Dispatcher</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                
+                <button onclick="login()" class="btn btn-primary">Login</button>
+                <p class="demo-hint">Demo: Use any username with password "demo123"</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="appScreen" class="screen">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1>🚗 CarTracker</h1>
+                <span class="user-info" id="userInfo">Dispatcher</span>
+            </div>
+            <div class="header-right">
+                <button onclick="showNotifications()" class="btn-icon" id="notificationBtn">
+                    🔔 <span id="notificationBadge" class="badge"></span>
+                </button>
+                <button onclick="logout()" class="btn btn-secondary">Logout</button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Sidebar Navigation -->
+            <aside class="sidebar">
+                <nav class="nav-menu">
+                    <button class="nav-item active" onclick="showSection('dashboard')">📊 Dashboard</button>
+                    <button class="nav-item" onclick="showSection('scheduling')">📅 Scheduling</button>
+                    <button class="nav-item" onclick="showSection('vehicles')">🚗 Vehicles</button>
+                    <button class="nav-item" onclick="showSection('assignments')">📋 Assignments</button>
+                    <button class="nav-item" onclick="showSection('reports')">📈 Reports</button>
+                    <div id="adminMenu" style="display: none;">
+                        <button class="nav-item" onclick="showSection('settings')">⚙️ Settings</button>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="content">
+                <!-- Dashboard Section -->
+                <section id="dashboard" class="section active">
+                    <h2>Dashboard</h2>
+                    <div class="dashboard-grid">
+                        <div class="card stat-card">
+                            <h3>Active Drivers</h3>
+                            <p class="stat-number" id="activeDriversCount">0</p>
+                        </div>
+                        <div class="card stat-card">
+                            <h3>Scheduled Shifts</h3>
+                            <p class="stat-number" id="scheduledShiftsCount">0</p>
+                        </div>
+                        <div class="card stat-card">
+                            <h3>Available Vehicles</h3>
+                            <p class="stat-number" id="availableVehiclesCount">0</p>
+                        </div>
+                        <div class="card stat-card">
+                            <h3>Pending Alerts</h3>
+                            <p class="stat-number" id="pendingAlertsCount">0</p>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-section">
+                        <h3>Fleet Status Overview</h3>
+                        <div class="fleet-status" id="fleetStatus"></div>
+                    </div>
+
+                    <div class="dashboard-section">
+                        <h3>Today's Shifts</h3>
+                        <div id="todayShifts" class="shifts-list"></div>
+                    </div>
+                </section>
+
+                <!-- Scheduling Section -->
+                <section id="scheduling" class="section">
+                    <h2>Schedule Management</h2>
+                    <div class="scheduling-controls">
+                        <button onclick="showModal('shiftModal')" class="btn btn-primary">+ New Shift</button>
+                    </div>
+
+                    <div class="schedule-container">
+                        <div class="calendar-grid" id="calendarGrid"></div>
+                        <div class="shifts-sidebar" id="shiftsList"></div>
+                    </div>
+                </section>
+
+                <!-- Vehicles Section -->
+                <section id="vehicles" class="section">
+                    <h2>Vehicle Management</h2>
+                    <div class="vehicles-controls">
+                        <input type="text" id="vehicleSearch" placeholder="Search vehicles..." onkeyup="filterVehicles()">
+                        <button onclick="showModal('vehicleModal')" class="btn btn-primary">+ Add Vehicle</button>
+                    </div>
+
+                    <div class="vehicles-grid" id="vehiclesGrid"></div>
+                </section>
+
+                <!-- Assignments Section -->
+                <section id="assignments" class="section">
+                    <h2>Task Assignments</h2>
+                    <div class="assignments-controls">
+                        <select id="assignmentFilter" onchange="filterAssignments()">
+                            <option value="all">All Assignments</option>
+                            <option value="pending">Pending</option>
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                        <button onclick="showModal('assignmentModal')" class="btn btn-primary">+ New Assignment</button>
+                    </div>
+
+                    <div class="assignments-list" id="assignmentsList"></div>
+                </section>
+
+                <!-- Reports Section -->
+                <section id="reports" class="section">
+                    <h2>Analytics & Reports</h2>
+                    <div class="reports-grid">
+                        <div class="card report-card">
+                            <h3>Shift Utilization</h3>
+                            <div id="utilizationChart" class="chart"></div>
+                        </div>
+                        <div class="card report-card">
+                            <h3>Vehicle Usage</h3>
+                            <div id="usageChart" class="chart"></div>
+                        </div>
+                        <div class="card report-card">
+                            <h3>Completion Rate</h3>
+                            <div id="completionChart" class="chart"></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Detailed Report</h3>
+                        <div class="report-controls">
+                            <input type="date" id="reportStartDate">
+                            <input type="date" id="reportEndDate">
+                            <button onclick="generateReport()" class="btn btn-primary">Generate</button>
+                        </div>
+                        <div id="detailedReport"></div>
+                    </div>
+                </section>
+
+                <!-- Settings Section (Admin Only) -->
+                <section id="settings" class="section">
+                    <h2>System Settings</h2>
+                    <div class="settings-form">
+                        <div class="form-group">
+                            <label>Company Name</label>
+                            <input type="text" id="companyName" placeholder="Enter company name">
+                        </div>
+                        <div class="form-group">
+                            <label>Max Shift Hours</label>
+                            <input type="number" id="maxShiftHours" min="1" max="24">
+                        </div>
+                        <div class="form-group">
+                            <label>Alert Threshold (km)</label>
+                            <input type="number" id="alertThreshold" min="100">
+                        </div>
+                        <button onclick="saveSettings()" class="btn btn-primary">Save Settings</button>
+                    </div>
+
+                    <div class="card">
+                        <h3>System Logs</h3>
+                        <button onclick="exportData()" class="btn btn-secondary">Export Data</button>
+                        <button onclick="clearData()" class="btn btn-danger">Clear All Data</button>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modals -->
+
+    <!-- New Shift Modal -->
+    <div id="shiftModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('shiftModal')">&times;</span>
+            <h2>Create New Shift</h2>
+            <div class="form-group">
+                <label>Driver Name</label>
+                <select id="shiftDriver"></select>
+            </div>
+            <div class="form-group">
+                <label>Vehicle</label>
+                <select id="shiftVehicle"></select>
+            </div>
+            <div class="form-group">
+                <label>Start Date & Time</label>
+                <input type="datetime-local" id="shiftStart">
+            </div>
+            <div class="form-group">
+                <label>End Date & Time</label>
+                <input type="datetime-local" id="shiftEnd">
+            </div>
+            <div class="form-group">
+                <label>Route/Notes</label>
+                <textarea id="shiftNotes" placeholder="Enter route details or notes"></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button onclick="createShift()" class="btn btn-primary">Create Shift</button>
+                <button onclick="closeModal('shiftModal')" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Vehicle Modal -->
+    <div id="vehicleModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('vehicleModal')">&times;</span>
+            <h2>Add Vehicle</h2>
+            <div class="form-group">
+                <label>License Plate</label>
+                <input type="text" id="vehiclePlate" placeholder="ABC-1234">
+            </div>
+            <div class="form-group">
+                <label>Model</label>
+                <input type="text" id="vehicleModel" placeholder="e.g., Toyota Corolla">
+            </div>
+            <div class="form-group">
+                <label>Year</label>
+                <input type="number" id="vehicleYear" min="1990" max="2099">
+            </div>
+            <div class="form-group">
+                <label>Mileage (km)</label>
+                <input type="number" id="vehicleMileage" min="0">
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select id="vehicleStatus">
+                    <option value="available">Available</option>
+                    <option value="in-use">In Use</option>
+                    <option value="maintenance">Maintenance</option>
+                </select>
+            </div>
+            <div class="modal-buttons">
+                <button onclick="addVehicle()" class="btn btn-primary">Add Vehicle</button>
+                <button onclick="closeModal('vehicleModal')" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Assignment Modal -->
+    <div id="assignmentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('assignmentModal')">&times;</span>
+            <h2>Create Assignment</h2>
+            <div class="form-group">
+                <label>Assigned To (Driver)</label>
+                <select id="assignmentDriver"></select>
+            </div>
+            <div class="form-group">
+                <label>Task Type</label>
+                <select id="assignmentType">
+                    <option value="inspection">Vehicle Inspection</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="delivery">Delivery</option>
+                    <option value="monitoring">Monitoring</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Vehicle</label>
+                <select id="assignmentVehicle"></select>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="assignmentDescription" placeholder="Task details"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Due Date</label>
+                <input type="date" id="assignmentDueDate">
+            </div>
+            <div class="form-group">
+                <label>Priority</label>
+                <select id="assignmentPriority">
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+            <div class="modal-buttons">
+                <button onclick="createAssignment()" class="btn btn-primary">Create Assignment</button>
+                <button onclick="closeModal('assignmentModal')" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications Modal -->
+    <div id="notificationsModal" class="modal">
+        <div class="modal-content notifications-modal">
+            <span class="close" onclick="closeModal('notificationsModal')">&times;</span>
+            <h2>Notifications</h2>
+            <div id="notificationsList" class="notifications-list"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
