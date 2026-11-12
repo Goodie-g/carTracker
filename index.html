@@ -3,27 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CarTracker - Fleet Scheduling System</title>
+    <title>CarTracker — Fleet Management</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <!-- Login Screen -->
     <div id="loginScreen" class="screen active">
         <div class="login-container">
-            <h1>CarTracker Fleet Management</h1>
-            <p class="subtitle">Scheduling & Monitoring System</p>
-            
-            <div class="login-form">
+            <div class="login-brand">
+                <div class="logo-mark">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/></svg>
+                </div>
+                <h1>CarTracker</h1>
+                <p class="subtitle">Fleet Scheduling &amp; Monitoring</p>
+            </div>
+
+            <form class="login-form" onsubmit="event.preventDefault(); login();">
                 <div class="form-group">
                     <label for="username">Username</label>
-                    <input type="text" id="username" placeholder="Enter username" value="dispatcher">
+                    <input type="text" id="username" placeholder="Enter username" value="dispatcher" autocomplete="username">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" placeholder="Enter password" value="demo123">
+                    <input type="password" id="password" placeholder="Enter password" value="demo123" autocomplete="current-password">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="role">Role</label>
                     <select id="role">
@@ -31,173 +36,318 @@
                         <option value="admin">Admin</option>
                     </select>
                 </div>
-                
-                <button onclick="login()" class="btn btn-primary">Login</button>
-                <p class="demo-hint">Demo: Use any username with password "demo123"</p>
-            </div>
+
+                <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+
+                <div class="demo-hint">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12v-.008z"/></svg>
+                    <span>Demo mode — sign in with any username and password <strong>demo123</strong>.</span>
+                </div>
+            </form>
         </div>
     </div>
 
     <!-- Main Application -->
     <div id="appScreen" class="screen">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-left">
-                <h1>🚗 CarTracker</h1>
-                <span class="user-info" id="userInfo">Dispatcher</span>
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="logo-mark sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/></svg>
+                </div>
+                <span>CarTracker</span>
             </div>
-            <div class="header-right">
-                <button onclick="showNotifications()" class="btn-icon" id="notificationBtn">
-                    🔔 <span id="notificationBadge" class="badge"></span>
-                </button>
-                <button onclick="logout()" class="btn btn-secondary">Logout</button>
-            </div>
-        </header>
 
-        <div class="main-content">
-            <!-- Sidebar Navigation -->
-            <aside class="sidebar">
-                <nav class="nav-menu">
-                    <button class="nav-item active" onclick="showSection('dashboard')">📊 Dashboard</button>
-                    <button class="nav-item" onclick="showSection('scheduling')">📅 Scheduling</button>
-                    <button class="nav-item" onclick="showSection('vehicles')">🚗 Vehicles</button>
-                    <button class="nav-item" onclick="showSection('assignments')">📋 Assignments</button>
-                    <button class="nav-item" onclick="showSection('reports')">📈 Reports</button>
-                    <div id="adminMenu" style="display: none;">
-                        <button class="nav-item" onclick="showSection('settings')">⚙️ Settings</button>
+            <nav class="nav-menu">
+                <span class="nav-label">Menu</span>
+                <button class="nav-item active" onclick="showSection('dashboard', this)">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-item" onclick="showSection('scheduling', this)">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+                    <span>Scheduling</span>
+                </button>
+                <button class="nav-item" onclick="showSection('vehicles', this)">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/></svg>
+                    <span>Vehicles</span>
+                </button>
+                <button class="nav-item" onclick="showSection('assignments', this)">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                    <span>Assignments</span>
+                </button>
+                <button class="nav-item" onclick="showSection('reports', this)">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z"/></svg>
+                    <span>Reports</span>
+                </button>
+                <div id="adminMenu" style="display: none;">
+                    <span class="nav-label">Administration</span>
+                    <button class="nav-item" onclick="showSection('settings', this)">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.148.065.222.082.243.056.495.044.732-.035l1.228-.409a1.125 1.125 0 011.272.443l1.294 1.839c.292.415.294.962.006 1.38l-.937 1.368c-.187.273-.244.616-.16.931a1.11 1.11 0 00.06.185c.11.315.4.543.74.604l1.28.213c.543.09.94.56.94 1.11v2.593c0 .55-.397 1.02-.94 1.11l-1.28.213c-.34.061-.63.289-.74.604a1.11 1.11 0 00-.06.185c-.084.315-.027.658.16.931l.937 1.368c.288.418.286.965-.006 1.38l-1.294 1.839c-.33.469-.892.654-1.272.443l-1.228-.409a1.125 1.125 0 00-.732-.035 1.108 1.108 0 00-.222.082c-.332.184-.582.496-.645.87l-.213 1.281c-.09.542-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.212-1.281a1.125 1.125 0 00-.645-.87 1.11 1.11 0 00-.222-.082 1.125 1.125 0 00-.732.035l-1.228.409a1.125 1.125 0 01-1.272-.443L2.983 16.06a1.125 1.125 0 01.006-1.38l.937-1.368c.187-.273.244-.616.16-.931a1.106 1.106 0 00-.06-.185 1.125 1.125 0 00-.74-.604l-1.281-.213a1.124 1.124 0 01-.94-1.11V6.297c0-.55.397-1.02.94-1.11l1.281-.213c.34-.061.63-.289.74-.604.027-.06.048-.122.06-.185.084-.315.027-.658-.16-.931L3.99 5.88a1.125 1.125 0 01-.006-1.38L5.278 2.66c.33-.469.892-.654 1.272-.443l1.228.409c.237.079.49.091.732.035.074-.017.148-.042.222-.082.332-.184.582-.496.645-.87l.212-1.28z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        <span>Settings</span>
+                    </button>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">Fleet Management System</div>
+        </aside>
+
+        <div class="app-main">
+            <!-- Topbar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <h2 class="topbar-greeting" id="greeting">Welcome back</h2>
+                    <p class="topbar-date" id="currentDate"></p>
+                </div>
+                <div class="topbar-right">
+                    <button onclick="showNotifications()" class="icon-btn" id="notificationBtn" aria-label="Notifications" title="Notifications">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+                        <span id="notificationBadge" class="badge"></span>
+                    </button>
+                    <div class="user-chip">
+                        <div class="avatar" id="userAvatar">D</div>
+                        <div class="user-meta">
+                            <span id="userInfo">dispatcher</span>
+                            <span class="user-role" id="userRole">Dispatcher</span>
+                        </div>
                     </div>
-                </nav>
-            </aside>
+                    <div class="topbar-divider"></div>
+                    <button onclick="logout()" class="icon-btn danger" aria-label="Log out" title="Log out">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"/></svg>
+                    </button>
+                </div>
+            </header>
 
             <!-- Main Content Area -->
             <main class="content">
-                <!-- Dashboard Section -->
-                <section id="dashboard" class="section active">
-                    <h2>Dashboard</h2>
-                    <div class="dashboard-grid">
-                        <div class="card stat-card">
-                            <h3>Active Drivers</h3>
-                            <p class="stat-number" id="activeDriversCount">0</p>
+                <div class="content-inner">
+                    <!-- Dashboard Section -->
+                    <section id="dashboard" class="section active">
+                        <div class="section-header">
+                            <div>
+                                <h2>Dashboard</h2>
+                                <p class="section-subtitle">Your fleet at a glance</p>
+                            </div>
                         </div>
-                        <div class="card stat-card">
-                            <h3>Scheduled Shifts</h3>
-                            <p class="stat-number" id="scheduledShiftsCount">0</p>
+
+                        <div class="dashboard-grid">
+                            <div class="card stat-card">
+                                <div class="stat-icon indigo">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
+                                </div>
+                                <div>
+                                    <p class="stat-label">Active Drivers</p>
+                                    <p class="stat-number" id="activeDriversCount">0</p>
+                                </div>
+                            </div>
+                            <div class="card stat-card">
+                                <div class="stat-icon blue">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </div>
+                                <div>
+                                    <p class="stat-label">Scheduled Shifts</p>
+                                    <p class="stat-number" id="scheduledShiftsCount">0</p>
+                                </div>
+                            </div>
+                            <div class="card stat-card">
+                                <div class="stat-icon green">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/></svg>
+                                </div>
+                                <div>
+                                    <p class="stat-label">Available Vehicles</p>
+                                    <p class="stat-number" id="availableVehiclesCount">0</p>
+                                </div>
+                            </div>
+                            <div class="card stat-card">
+                                <div class="stat-icon amber">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+                                </div>
+                                <div>
+                                    <p class="stat-label">Pending Tasks</p>
+                                    <p class="stat-number" id="pendingAlertsCount">0</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card stat-card">
-                            <h3>Available Vehicles</h3>
-                            <p class="stat-number" id="availableVehiclesCount">0</p>
+
+                        <div class="dashboard-panels">
+                            <div class="card">
+                                <div class="panel-header">
+                                    <h3>Fleet Status</h3>
+                                </div>
+                                <div class="fleet-status" id="fleetStatus"></div>
+                            </div>
+                            <div class="card">
+                                <div class="panel-header">
+                                    <h3>Today's Shifts</h3>
+                                </div>
+                                <div id="todayShifts" class="shifts-list"></div>
+                            </div>
                         </div>
-                        <div class="card stat-card">
-                            <h3>Pending Alerts</h3>
-                            <p class="stat-number" id="pendingAlertsCount">0</p>
+                    </section>
+
+                    <!-- Scheduling Section -->
+                    <section id="scheduling" class="section">
+                        <div class="section-header">
+                            <div>
+                                <h2>Scheduling</h2>
+                                <p class="section-subtitle">Plan and track driver shifts</p>
+                            </div>
+                            <button onclick="showModal('shiftModal')" class="btn btn-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                                New Shift
+                            </button>
                         </div>
-                    </div>
 
-                    <div class="dashboard-section">
-                        <h3>Fleet Status Overview</h3>
-                        <div class="fleet-status" id="fleetStatus"></div>
-                    </div>
-
-                    <div class="dashboard-section">
-                        <h3>Today's Shifts</h3>
-                        <div id="todayShifts" class="shifts-list"></div>
-                    </div>
-                </section>
-
-                <!-- Scheduling Section -->
-                <section id="scheduling" class="section">
-                    <h2>Schedule Management</h2>
-                    <div class="scheduling-controls">
-                        <button onclick="showModal('shiftModal')" class="btn btn-primary">+ New Shift</button>
-                    </div>
-
-                    <div class="schedule-container">
-                        <div class="calendar-grid" id="calendarGrid"></div>
-                        <div class="shifts-sidebar" id="shiftsList"></div>
-                    </div>
-                </section>
-
-                <!-- Vehicles Section -->
-                <section id="vehicles" class="section">
-                    <h2>Vehicle Management</h2>
-                    <div class="vehicles-controls">
-                        <input type="text" id="vehicleSearch" placeholder="Search vehicles..." onkeyup="filterVehicles()">
-                        <button onclick="showModal('vehicleModal')" class="btn btn-primary">+ Add Vehicle</button>
-                    </div>
-
-                    <div class="vehicles-grid" id="vehiclesGrid"></div>
-                </section>
-
-                <!-- Assignments Section -->
-                <section id="assignments" class="section">
-                    <h2>Task Assignments</h2>
-                    <div class="assignments-controls">
-                        <select id="assignmentFilter" onchange="filterAssignments()">
-                            <option value="all">All Assignments</option>
-                            <option value="pending">Pending</option>
-                            <option value="active">Active</option>
-                            <option value="completed">Completed</option>
-                        </select>
-                        <button onclick="showModal('assignmentModal')" class="btn btn-primary">+ New Assignment</button>
-                    </div>
-
-                    <div class="assignments-list" id="assignmentsList"></div>
-                </section>
-
-                <!-- Reports Section -->
-                <section id="reports" class="section">
-                    <h2>Analytics & Reports</h2>
-                    <div class="reports-grid">
-                        <div class="card report-card">
-                            <h3>Shift Utilization</h3>
-                            <div id="utilizationChart" class="chart"></div>
+                        <div class="schedule-container">
+                            <div class="card calendar-card" id="calendarGrid"></div>
+                            <div class="card shifts-panel">
+                                <div class="panel-header">
+                                    <h3>Shifts</h3>
+                                    <span class="text-muted" id="selectedDateLabel"></span>
+                                </div>
+                                <div class="shifts-list" id="shiftsList"></div>
+                            </div>
                         </div>
-                        <div class="card report-card">
-                            <h3>Vehicle Usage</h3>
-                            <div id="usageChart" class="chart"></div>
-                        </div>
-                        <div class="card report-card">
-                            <h3>Completion Rate</h3>
-                            <div id="completionChart" class="chart"></div>
-                        </div>
-                    </div>
+                    </section>
 
-                    <div class="card">
-                        <h3>Detailed Report</h3>
-                        <div class="report-controls">
-                            <input type="date" id="reportStartDate">
-                            <input type="date" id="reportEndDate">
-                            <button onclick="generateReport()" class="btn btn-primary">Generate</button>
+                    <!-- Vehicles Section -->
+                    <section id="vehicles" class="section">
+                        <div class="section-header">
+                            <div>
+                                <h2>Vehicles</h2>
+                                <p class="section-subtitle">Manage your fleet inventory</p>
+                            </div>
+                            <button onclick="showModal('vehicleModal')" class="btn btn-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                                Add Vehicle
+                            </button>
                         </div>
-                        <div id="detailedReport"></div>
-                    </div>
-                </section>
 
-                <!-- Settings Section (Admin Only) -->
-                <section id="settings" class="section">
-                    <h2>System Settings</h2>
-                    <div class="settings-form">
-                        <div class="form-group">
-                            <label>Company Name</label>
-                            <input type="text" id="companyName" placeholder="Enter company name">
+                        <div class="controls-bar">
+                            <div class="search-box">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+                                <input type="text" id="vehicleSearch" placeholder="Search by plate or model..." onkeyup="filterVehicles()">
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>Max Shift Hours</label>
-                            <input type="number" id="maxShiftHours" min="1" max="24">
-                        </div>
-                        <div class="form-group">
-                            <label>Alert Threshold (km)</label>
-                            <input type="number" id="alertThreshold" min="100">
-                        </div>
-                        <button onclick="saveSettings()" class="btn btn-primary">Save Settings</button>
-                    </div>
 
-                    <div class="card">
-                        <h3>System Logs</h3>
-                        <button onclick="exportData()" class="btn btn-secondary">Export Data</button>
-                        <button onclick="clearData()" class="btn btn-danger">Clear All Data</button>
-                    </div>
-                </section>
+                        <div class="vehicles-grid" id="vehiclesGrid"></div>
+                    </section>
+
+                    <!-- Assignments Section -->
+                    <section id="assignments" class="section">
+                        <div class="section-header">
+                            <div>
+                                <h2>Assignments</h2>
+                                <p class="section-subtitle">Track tasks assigned to drivers</p>
+                            </div>
+                            <button onclick="showModal('assignmentModal')" class="btn btn-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                                New Assignment
+                            </button>
+                        </div>
+
+                        <div class="controls-bar">
+                            <select id="assignmentFilter" class="filter-select" onchange="filterAssignments()">
+                                <option value="all">All Assignments</option>
+                                <option value="pending">Pending</option>
+                                <option value="active">Active</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+
+                        <div class="assignments-list" id="assignmentsList"></div>
+                    </section>
+
+                    <!-- Reports Section -->
+                    <section id="reports" class="section">
+                        <div class="section-header">
+                            <div>
+                                <h2>Reports</h2>
+                                <p class="section-subtitle">Fleet analytics and activity summaries</p>
+                            </div>
+                        </div>
+
+                        <div class="reports-grid">
+                            <div class="card report-card">
+                                <h3 class="card-title">Shift Utilization</h3>
+                                <p class="card-subtitle">Status of all shifts</p>
+                                <div id="utilizationChart" class="chart"></div>
+                            </div>
+                            <div class="card report-card">
+                                <h3 class="card-title">Vehicle Usage</h3>
+                                <p class="card-subtitle">Current fleet availability</p>
+                                <div id="usageChart" class="chart"></div>
+                            </div>
+                            <div class="card report-card">
+                                <h3 class="card-title">Task Completion</h3>
+                                <p class="card-subtitle">Assignment progress</p>
+                                <div id="completionChart" class="chart"></div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3 class="card-title">Detailed Report</h3>
+                            <p class="card-subtitle">Generate a report of shifts and assignments within a date range</p>
+                            <div class="report-controls">
+                                <div class="field">
+                                    <label for="reportStartDate">Start date</label>
+                                    <input type="date" id="reportStartDate">
+                                </div>
+                                <div class="field">
+                                    <label for="reportEndDate">End date</label>
+                                    <input type="date" id="reportEndDate">
+                                </div>
+                                <button onclick="generateReport()" class="btn btn-primary">Generate</button>
+                            </div>
+                            <div id="detailedReport"></div>
+                        </div>
+                    </section>
+
+                    <!-- Settings Section (Admin Only) -->
+                    <section id="settings" class="section">
+                        <div class="section-header">
+                            <div>
+                                <h2>Settings</h2>
+                                <p class="section-subtitle">System configuration and data management</p>
+                            </div>
+                        </div>
+
+                        <div class="card settings-form">
+                            <h3 class="card-title">General</h3>
+                            <p class="card-subtitle">These preferences apply across the whole system</p>
+                            <div class="form-group">
+                                <label for="companyName">Company Name</label>
+                                <input type="text" id="companyName" placeholder="Enter company name">
+                            </div>
+                            <div class="form-group">
+                                <label for="maxShiftHours">Max Shift Hours</label>
+                                <input type="number" id="maxShiftHours" min="1" max="24">
+                            </div>
+                            <div class="form-group">
+                                <label for="alertThreshold">Alert Threshold (km)</label>
+                                <input type="number" id="alertThreshold" min="100">
+                            </div>
+                            <div class="form-actions">
+                                <button onclick="saveSettings()" class="btn btn-primary">Save Settings</button>
+                            </div>
+                        </div>
+
+                        <div class="card danger-zone settings-form">
+                            <h3 class="card-title">Data Management</h3>
+                            <p class="card-subtitle">Export a backup of your data, or permanently erase everything stored in this browser.</p>
+                            <div class="danger-actions">
+                                <button onclick="exportData()" class="btn btn-secondary">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                                    Export Data
+                                </button>
+                                <button onclick="clearData()" class="btn btn-danger">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+                                    Clear All Data
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
             </main>
         </div>
     </div>
@@ -205,123 +355,145 @@
     <!-- Modals -->
 
     <!-- New Shift Modal -->
-    <div id="shiftModal" class="modal">
+    <div id="shiftModal" class="modal" role="dialog" aria-modal="true">
         <div class="modal-content">
-            <span class="close" onclick="closeModal('shiftModal')">&times;</span>
-            <h2>Create New Shift</h2>
-            <div class="form-group">
-                <label>Driver Name</label>
-                <select id="shiftDriver"></select>
+            <div class="modal-header">
+                <h2>Create New Shift</h2>
+                <button class="icon-btn" onclick="closeModal('shiftModal')" aria-label="Close">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
             </div>
-            <div class="form-group">
-                <label>Vehicle</label>
-                <select id="shiftVehicle"></select>
-            </div>
-            <div class="form-group">
-                <label>Start Date & Time</label>
-                <input type="datetime-local" id="shiftStart">
-            </div>
-            <div class="form-group">
-                <label>End Date & Time</label>
-                <input type="datetime-local" id="shiftEnd">
-            </div>
-            <div class="form-group">
-                <label>Route/Notes</label>
-                <textarea id="shiftNotes" placeholder="Enter route details or notes"></textarea>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="shiftDriver">Driver</label>
+                    <select id="shiftDriver"></select>
+                </div>
+                <div class="form-group">
+                    <label for="shiftVehicle">Vehicle</label>
+                    <select id="shiftVehicle"></select>
+                </div>
+                <div class="form-group">
+                    <label for="shiftStart">Start Date &amp; Time</label>
+                    <input type="datetime-local" id="shiftStart">
+                </div>
+                <div class="form-group">
+                    <label for="shiftEnd">End Date &amp; Time</label>
+                    <input type="datetime-local" id="shiftEnd">
+                </div>
+                <div class="form-group">
+                    <label for="shiftNotes">Route / Notes</label>
+                    <textarea id="shiftNotes" placeholder="Enter route details or notes"></textarea>
+                </div>
             </div>
             <div class="modal-buttons">
-                <button onclick="createShift()" class="btn btn-primary">Create Shift</button>
                 <button onclick="closeModal('shiftModal')" class="btn btn-secondary">Cancel</button>
+                <button onclick="createShift()" class="btn btn-primary">Create Shift</button>
             </div>
         </div>
     </div>
 
     <!-- Add Vehicle Modal -->
-    <div id="vehicleModal" class="modal">
+    <div id="vehicleModal" class="modal" role="dialog" aria-modal="true">
         <div class="modal-content">
-            <span class="close" onclick="closeModal('vehicleModal')">&times;</span>
-            <h2>Add Vehicle</h2>
-            <div class="form-group">
-                <label>License Plate</label>
-                <input type="text" id="vehiclePlate" placeholder="ABC-1234">
+            <div class="modal-header">
+                <h2>Add Vehicle</h2>
+                <button class="icon-btn" onclick="closeModal('vehicleModal')" aria-label="Close">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
             </div>
-            <div class="form-group">
-                <label>Model</label>
-                <input type="text" id="vehicleModel" placeholder="e.g., Toyota Corolla">
-            </div>
-            <div class="form-group">
-                <label>Year</label>
-                <input type="number" id="vehicleYear" min="1990" max="2099">
-            </div>
-            <div class="form-group">
-                <label>Mileage (km)</label>
-                <input type="number" id="vehicleMileage" min="0">
-            </div>
-            <div class="form-group">
-                <label>Status</label>
-                <select id="vehicleStatus">
-                    <option value="available">Available</option>
-                    <option value="in-use">In Use</option>
-                    <option value="maintenance">Maintenance</option>
-                </select>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="vehiclePlate">License Plate</label>
+                    <input type="text" id="vehiclePlate" placeholder="ABC-1234">
+                </div>
+                <div class="form-group">
+                    <label for="vehicleModel">Model</label>
+                    <input type="text" id="vehicleModel" placeholder="e.g., Toyota Corolla">
+                </div>
+                <div class="form-group">
+                    <label for="vehicleYear">Year</label>
+                    <input type="number" id="vehicleYear" min="1990" max="2099" placeholder="2024">
+                </div>
+                <div class="form-group">
+                    <label for="vehicleMileage">Mileage (km)</label>
+                    <input type="number" id="vehicleMileage" min="0" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label for="vehicleStatus">Status</label>
+                    <select id="vehicleStatus">
+                        <option value="available">Available</option>
+                        <option value="in-use">In Use</option>
+                        <option value="maintenance">Maintenance</option>
+                    </select>
+                </div>
             </div>
             <div class="modal-buttons">
-                <button onclick="addVehicle()" class="btn btn-primary">Add Vehicle</button>
                 <button onclick="closeModal('vehicleModal')" class="btn btn-secondary">Cancel</button>
+                <button onclick="addVehicle()" class="btn btn-primary">Add Vehicle</button>
             </div>
         </div>
     </div>
 
     <!-- New Assignment Modal -->
-    <div id="assignmentModal" class="modal">
+    <div id="assignmentModal" class="modal" role="dialog" aria-modal="true">
         <div class="modal-content">
-            <span class="close" onclick="closeModal('assignmentModal')">&times;</span>
-            <h2>Create Assignment</h2>
-            <div class="form-group">
-                <label>Assigned To (Driver)</label>
-                <select id="assignmentDriver"></select>
+            <div class="modal-header">
+                <h2>Create Assignment</h2>
+                <button class="icon-btn" onclick="closeModal('assignmentModal')" aria-label="Close">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
             </div>
-            <div class="form-group">
-                <label>Task Type</label>
-                <select id="assignmentType">
-                    <option value="inspection">Vehicle Inspection</option>
-                    <option value="maintenance">Maintenance</option>
-                    <option value="delivery">Delivery</option>
-                    <option value="monitoring">Monitoring</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Vehicle</label>
-                <select id="assignmentVehicle"></select>
-            </div>
-            <div class="form-group">
-                <label>Description</label>
-                <textarea id="assignmentDescription" placeholder="Task details"></textarea>
-            </div>
-            <div class="form-group">
-                <label>Due Date</label>
-                <input type="date" id="assignmentDueDate">
-            </div>
-            <div class="form-group">
-                <label>Priority</label>
-                <select id="assignmentPriority">
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                </select>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="assignmentDriver">Assigned To (Driver)</label>
+                    <select id="assignmentDriver"></select>
+                </div>
+                <div class="form-group">
+                    <label for="assignmentType">Task Type</label>
+                    <select id="assignmentType">
+                        <option value="inspection">Vehicle Inspection</option>
+                        <option value="maintenance">Maintenance</option>
+                        <option value="delivery">Delivery</option>
+                        <option value="monitoring">Monitoring</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="assignmentVehicle">Vehicle</label>
+                    <select id="assignmentVehicle"></select>
+                </div>
+                <div class="form-group">
+                    <label for="assignmentDescription">Description</label>
+                    <textarea id="assignmentDescription" placeholder="Task details"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="assignmentDueDate">Due Date</label>
+                    <input type="date" id="assignmentDueDate">
+                </div>
+                <div class="form-group">
+                    <label for="assignmentPriority">Priority</label>
+                    <select id="assignmentPriority">
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
             </div>
             <div class="modal-buttons">
-                <button onclick="createAssignment()" class="btn btn-primary">Create Assignment</button>
                 <button onclick="closeModal('assignmentModal')" class="btn btn-secondary">Cancel</button>
+                <button onclick="createAssignment()" class="btn btn-primary">Create Assignment</button>
             </div>
         </div>
     </div>
 
     <!-- Notifications Modal -->
-    <div id="notificationsModal" class="modal">
+    <div id="notificationsModal" class="modal" role="dialog" aria-modal="true">
         <div class="modal-content notifications-modal">
-            <span class="close" onclick="closeModal('notificationsModal')">&times;</span>
-            <h2>Notifications</h2>
+            <div class="modal-header">
+                <h2>Notifications</h2>
+                <button class="icon-btn" onclick="closeModal('notificationsModal')" aria-label="Close">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
             <div id="notificationsList" class="notifications-list"></div>
         </div>
     </div>

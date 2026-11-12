@@ -14,12 +14,27 @@ const app = {
     }
 };
 
+// Shared SVG snippets for generated markup
+const ICONS = {
+    inbox: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>',
+    chevronLeft: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>',
+    chevronRight: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>',
+    close: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>'
+};
+
 // Initialize app on page load
 document.addEventListener('DOMContentLoaded', () => {
     loadDataFromStorage();
     initializeDefaultData();
     ensureDriversLoaded();
     updateDashboard();
+});
+
+// Close any open modal with the Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+    }
 });
 
 // ===== AUTHENTICATION =====
@@ -48,8 +63,17 @@ function login() {
     const adminMenu = document.getElementById('adminMenu');
     adminMenu.style.display = role === 'admin' ? 'block' : 'none';
 
-    // Update UI
-    document.getElementById('userInfo').textContent = `${role.toUpperCase()} - ${username}`;
+    // Update topbar: greeting, date and user chip
+    const hour = new Date().getHours();
+    const partOfDay = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+    document.getElementById('greeting').textContent = `Good ${partOfDay}, ${username}`;
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString(undefined, {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+    document.getElementById('userInfo').textContent = username;
+    document.getElementById('userRole').textContent = role.charAt(0).toUpperCase() + role.slice(1);
+    document.getElementById('userAvatar').textContent = username.charAt(0).toUpperCase();
+
     document.getElementById('loginScreen').classList.remove('active');
     document.getElementById('appScreen').classList.add('active');
 
@@ -70,7 +94,7 @@ function logout() {
 }
 
 // ===== NAVIGATION & SECTIONS =====
-function showSection(sectionId) {
+function showSection(sectionId, el) {
     // Hide all sections
     document.querySelectorAll('.section').forEach(section => {
         section.classList.remove('active');
@@ -85,11 +109,18 @@ function showSection(sectionId) {
     document.getElementById(sectionId).classList.add('active');
 
     // Add active class to clicked nav item
-    event.target.classList.add('active');
+    const navItem = el || (window.event && window.event.target.closest
+        ? window.event.target.closest('.nav-item')
+        : null);
+    if (navItem) navItem.classList.add('active');
 
     // Update content based on section
     if (sectionId === 'scheduling') {
         updateScheduleCalendar();
+    } else if (sectionId === 'vehicles') {
+        renderVehicles(document.getElementById('vehicleSearch').value);
+    } else if (sectionId === 'assignments') {
+        renderAssignments(document.getElementById('assignmentFilter').value);
     } else if (sectionId === 'reports') {
         generateCharts();
     }
@@ -112,6 +143,10 @@ function showModal(modalId) {
         populateDriverSelect('assignmentDriver');
         populateVehicleSelect('assignmentVehicle');
     }
+
+    // Focus the first field for faster keyboard entry
+    const firstField = modal.querySelector('select, input, textarea');
+    if (firstField) firstField.focus();
 }
 
 function closeModal(modalId) {
@@ -129,6 +164,23 @@ window.addEventListener('click', (event) => {
         event.target.classList.remove('active');
     }
 });
+
+// ===== SHARED RENDER HELPERS =====
+function emptyState(message) {
+    return `<div class="empty-state">
+        <div class="empty-icon">${ICONS.inbox}</div>
+        <p>${message}</p>
+    </div>`;
+}
+
+function statusBadge(status) {
+    return `<span class="status-badge ${status}"><span class="dot"></span>${status.replace('-', ' ')}</span>`;
+}
+
+function formatShiftTime(shift) {
+    const opts = { hour: '2-digit', minute: '2-digit' };
+    return `${new Date(shift.startTime).toLocaleTimeString([], opts)} – ${new Date(shift.endTime).toLocaleTimeString([], opts)}`;
+}
 
 // ===== VEHICLES =====
 function addVehicle() {
@@ -174,32 +226,34 @@ function renderVehicles(filter = '') {
         );
     }
 
+    if (vehicles.length === 0) {
+        grid.innerHTML = `<div class="grid-empty">${emptyState(filter ? 'No vehicles match your search' : 'No vehicles found')}</div>`;
+        return;
+    }
+
     grid.innerHTML = vehicles.map(vehicle => `
         <div class="vehicle-card">
-            <h3>${vehicle.plate}</h3>
-            <div class="vehicle-info">
-                <span>Model:</span>
-                <span>${vehicle.model} (${vehicle.year})</span>
+            <div class="vehicle-card-header">
+                <span class="vehicle-plate">${vehicle.plate}</span>
+                ${statusBadge(vehicle.status)}
             </div>
-            <div class="vehicle-info">
-                <span>Mileage:</span>
-                <span>${vehicle.mileage.toLocaleString()} km</span>
+            <div class="vehicle-model">${vehicle.model} · ${vehicle.year}</div>
+            <div class="vehicle-meta">
+                <div class="meta-item">
+                    <span class="meta-label">Mileage</span>
+                    <span class="meta-value">${vehicle.mileage.toLocaleString()} km</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Last Service</span>
+                    <span class="meta-value">${new Date(vehicle.lastService).toLocaleDateString()}</span>
+                </div>
             </div>
-            <div class="vehicle-info">
-                <span>Status:</span>
-                <span>${vehicle.status}</span>
-            </div>
-            <span class="status-badge ${vehicle.status}">${vehicle.status}</span>
-            <div style="margin-top: 10px; display: flex; gap: 5px;">
-                <button class="btn btn-secondary" style="flex: 1; font-size: 12px;" onclick="editVehicle(${vehicle.id})">Edit</button>
-                <button class="btn btn-danger" style="flex: 1; font-size: 12px;" onclick="deleteVehicle(${vehicle.id})">Delete</button>
+            <div class="card-actions">
+                <button class="btn btn-ghost btn-sm" onclick="editVehicle(${vehicle.id})">Edit</button>
+                <button class="btn btn-ghost-danger btn-sm" onclick="deleteVehicle(${vehicle.id})">Delete</button>
             </div>
         </div>
     `).join('');
-
-    if (vehicles.length === 0) {
-        grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--secondary-color);">No vehicles found</p>';
-    }
 }
 
 function filterVehicles() {
@@ -225,13 +279,13 @@ function editVehicle(id) {
         document.getElementById('vehicleYear').value = vehicle.year;
         document.getElementById('vehicleMileage').value = vehicle.mileage;
         document.getElementById('vehicleStatus').value = vehicle.status;
-        
+
         // Modify the button to update instead
         const form = document.querySelector('#vehicleModal .modal-buttons');
-        const oldBtn = form.querySelector('button:first-child');
-        oldBtn.textContent = 'Update Vehicle';
-        oldBtn.onclick = () => updateVehicle(id);
-        
+        const primaryBtn = form.querySelector('.btn-primary');
+        primaryBtn.textContent = 'Update Vehicle';
+        primaryBtn.onclick = () => updateVehicle(id);
+
         showModal('vehicleModal');
     }
 }
@@ -250,13 +304,13 @@ function updateVehicle(id) {
         updateDashboard();
         closeModal('vehicleModal');
         clearModalForms();
-        
+
         // Reset button
         const form = document.querySelector('#vehicleModal .modal-buttons');
-        const btn = form.querySelector('button:first-child');
-        btn.textContent = 'Add Vehicle';
-        btn.onclick = () => addVehicle();
-        
+        const primaryBtn = form.querySelector('.btn-primary');
+        primaryBtn.textContent = 'Add Vehicle';
+        primaryBtn.onclick = () => addVehicle();
+
         addNotification('Vehicle updated', 'success');
     }
 }
@@ -322,11 +376,11 @@ function createShift() {
     saveDataToStorage();
     closeModal('shiftModal');
     clearModalForms();
-    
+
     // Set the selected date to match the shift start date
     const shiftDate = new Date(startTime);
     app.selectedDate = shiftDate;
-    
+
     updateScheduleCalendar();
     updateDashboard();
     addNotification(`Shift created for ${driver.name}`, 'success');
@@ -336,48 +390,61 @@ function updateScheduleCalendar() {
     // Render calendar grid with current selected date's month
     renderCalendarGrid(app.selectedDate);
 
+    // Label for the side panel
+    const label = document.getElementById('selectedDateLabel');
+    if (label) {
+        label.textContent = app.selectedDate.toLocaleDateString(undefined, {
+            weekday: 'short', month: 'short', day: 'numeric'
+        });
+    }
+
     // Render shifts for selected date
     const shiftsList = document.getElementById('shiftsList');
     const dayShifts = app.shifts.filter(s => {
-        let shiftDate;
-        if (typeof s.startTime === 'string') {
-            shiftDate = new Date(s.startTime);
-        } else {
-            shiftDate = new Date(s.startTime);
-        }
+        const shiftDate = new Date(s.startTime);
         return shiftDate.toDateString() === app.selectedDate.toDateString();
     });
 
     if (dayShifts.length === 0) {
-        shiftsList.innerHTML = '<p style="color: var(--secondary-color); text-align: center;">No shifts scheduled for this date</p>';
-    } else {
-        shiftsList.innerHTML = dayShifts.map(shift => `
-            <div class="shift-item ${shift.status}">
-                <div class="shift-info">
-                    <h4>${shift.driverName}</h4>
-                    <p>${shift.vehiclePlate} - ${new Date(shift.startTime).toLocaleTimeString()} to ${new Date(shift.endTime).toLocaleTimeString()}</p>
-                    <p>${shift.notes}</p>
-                </div>
-                <div style="display: flex; gap: 5px; flex-direction: column;">
-                    <button class="btn btn-secondary" style="font-size: 11px; padding: 5px;" onclick="updateShiftStatus(${shift.id}, 'active')">Start</button>
-                    <button class="btn btn-success" style="font-size: 11px; padding: 5px;" onclick="updateShiftStatus(${shift.id}, 'completed')">Complete</button>
-                </div>
-            </div>
-        `).join('');
+        shiftsList.innerHTML = emptyState('No shifts scheduled for this date');
+        return;
     }
+
+    shiftsList.innerHTML = dayShifts.map(shift => {
+        let actions = '';
+        if (shift.status === 'scheduled') {
+            actions = `
+                <button class="btn btn-secondary btn-sm" onclick="updateShiftStatus(${shift.id}, 'active')">Start</button>
+                <button class="btn btn-success btn-sm" onclick="updateShiftStatus(${shift.id}, 'completed')">Complete</button>`;
+        } else if (shift.status === 'active') {
+            actions = `<button class="btn btn-success btn-sm" onclick="updateShiftStatus(${shift.id}, 'completed')">Complete</button>`;
+        } else {
+            actions = statusBadge(shift.status);
+        }
+
+        return `
+        <div class="shift-item ${shift.status}">
+            <div class="shift-info">
+                <h4>${shift.driverName}</h4>
+                <p>${shift.vehiclePlate} · ${formatShiftTime(shift)}</p>
+                ${shift.notes ? `<p class="shift-notes">${shift.notes}</p>` : ''}
+            </div>
+            <div class="shift-actions">${actions}</div>
+        </div>`;
+    }).join('');
 }
 
 function renderCalendarGrid(displayDate) {
     const grid = document.getElementById('calendarGrid');
     const year = displayDate.getFullYear();
     const month = displayDate.getMonth();
-    
+
     // Get first day of month and number of days
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
     const startingDayOfWeek = firstDay.getDay();
-    
+
     // Get shifts by date for this month
     const shiftsMap = {};
     app.shifts.forEach(shift => {
@@ -388,89 +455,64 @@ function renderCalendarGrid(displayDate) {
         }
         shiftsMap[dateKey].push(shift);
     });
-    
-    // Month and year header
+
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                        'July', 'August', 'September', 'October', 'November', 'December'];
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    
-    let html = `<div style="padding: 15px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <button class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px;" onclick="previousMonth()">← Prev</button>
-            <h3 style="text-align: center; margin: 0; flex: 1;">${monthNames[month]} ${year}</h3>
-            <button class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px;" onclick="nextMonth()">Next →</button>
+
+    let html = `
+        <div class="cal-header">
+            <h3>${monthNames[month]} ${year}</h3>
+            <div class="cal-nav">
+                <button class="icon-btn" onclick="previousMonth()" aria-label="Previous month">${ICONS.chevronLeft}</button>
+                <button class="icon-btn" onclick="nextMonth()" aria-label="Next month">${ICONS.chevronRight}</button>
+            </div>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px;">`;
-    
-    // Day headers
-    dayNames.forEach(day => {
-        html += `<div style="text-align: center; font-weight: 600; padding: 10px; background: var(--primary-color); color: white; border-radius: 4px;">${day}</div>`;
-    });
-    
+        <div class="cal-weekdays">
+            ${dayNames.map(d => `<span>${d}</span>`).join('')}
+        </div>
+        <div class="cal-days">`;
+
     // Empty cells before first day
     for (let i = 0; i < startingDayOfWeek; i++) {
-        html += '<div style="padding: 10px; background: #f0f0f0; border-radius: 4px;"></div>';
+        html += '<div class="cal-day empty"></div>';
     }
-    
+
     // Days of month
     const today = new Date();
     for (let day = 1; day <= daysInMonth; day++) {
         const dateKey = `${year}-${month}-${day}`;
         const dayShifts = shiftsMap[dateKey] || [];
         const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-        const cellDate = new Date(year, month, day);
-        const cellDateStr = cellDate.toISOString().split('T')[0];
         const isSelected = day === app.selectedDate.getDate() && month === app.selectedDate.getMonth() && year === app.selectedDate.getFullYear();
-        
-        // Determine shift status color
-        let shiftBadgeColor = '';
-        let shiftBadgeLabel = '';
+
+        // Shift status pill
+        let pill = '';
         if (dayShifts.length > 0) {
             const completedShifts = dayShifts.filter(s => s.status === 'completed').length;
             const totalShifts = dayShifts.length;
-            
+
             if (completedShifts === totalShifts) {
-                // All completed - green
-                shiftBadgeColor = '#4caf50';
-                shiftBadgeLabel = `${totalShifts} completed`;
+                pill = `<span class="shift-pill done">${totalShifts} completed</span>`;
             } else if (completedShifts > 0) {
-                // Mixed - blue (shows ongoing)
-                const ongoingShifts = totalShifts - completedShifts;
-                shiftBadgeColor = '#2196f3';
-                shiftBadgeLabel = `${ongoingShifts} active`;
+                pill = `<span class="shift-pill">${totalShifts - completedShifts} active</span>`;
             } else {
-                // All ongoing/scheduled - blue
-                shiftBadgeColor = '#2196f3';
-                shiftBadgeLabel = `${totalShifts} shift${totalShifts > 1 ? 's' : ''}`;
+                pill = `<span class="shift-pill">${totalShifts} shift${totalShifts > 1 ? 's' : ''}</span>`;
             }
         }
-        
-        const bgColor = isSelected ? '#ffeb3b' : isToday ? '#e3f2fd' : dayShifts.length > 0 ? '#f1f8e9' : 'white';
-        const borderColor = isSelected ? '#fbc02d' : isToday ? 'var(--primary-color)' : dayShifts.length > 0 ? 'var(--success-color)' : 'var(--border-color)';
-        const fontWeight = isSelected ? 'bold' : 'normal';
-        
-        html += `<div style="
-            padding: 10px; 
-            border: 2px solid ${borderColor};
-            border-radius: 4px; 
-            background: ${bgColor}; 
-            cursor: pointer;
-            min-height: 60px;
-            display: flex;
-            flex-direction: column;
-            transition: all 0.2s;
-            font-weight: ${fontWeight};
-        " onclick="selectCalendarDate('${year}', '${month}', '${day}')" 
-           onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'" 
-           onmouseout="this.style.boxShadow='none'">
-            <strong style="font-size: 14px; color: var(--dark-text);">${day}</strong>
-            <div style="font-size: 11px; color: var(--secondary-color); margin-top: 5px;">
-                ${shiftBadgeColor ? `<span style="background: ${shiftBadgeColor}; color: white; padding: 2px 6px; border-radius: 3px;">${shiftBadgeLabel}</span>` : ''}
-            </div>
-        </div>`;
+
+        const classes = ['cal-day'];
+        if (isToday) classes.push('today');
+        if (isSelected) classes.push('selected');
+
+        html += `
+            <div class="${classes.join(' ')}" onclick="selectCalendarDate('${year}', '${month}', '${day}')">
+                <span class="day-num">${day}</span>
+                ${pill}
+            </div>`;
     }
-    
-    html += '</div></div>';
+
+    html += '</div>';
     grid.innerHTML = html;
 }
 
@@ -549,29 +591,42 @@ function renderAssignments(filter = 'all') {
     }
 
     if (assignments.length === 0) {
-        list.innerHTML = '<p style="text-align: center; color: var(--secondary-color);">No assignments</p>';
+        list.innerHTML = emptyState(filter === 'all'
+            ? 'No assignments yet — create one to get started'
+            : `No ${filter} assignments`);
         return;
     }
 
-    list.innerHTML = assignments.map(assignment => `
-        <div class="assignment-card">
+    list.innerHTML = assignments.map(assignment => {
+        const actions = [];
+        if (assignment.status === 'pending') {
+            actions.push(`<button class="btn btn-primary btn-sm" onclick="updateAssignmentStatus(${assignment.id}, 'active')">Start</button>`);
+        }
+        if (assignment.status === 'pending' || assignment.status === 'active') {
+            actions.push(`<button class="btn btn-success btn-sm" onclick="updateAssignmentStatus(${assignment.id}, 'completed')">Complete</button>`);
+        }
+        actions.push(`<button class="btn btn-ghost-danger btn-sm" onclick="deleteAssignment(${assignment.id})">Delete</button>`);
+
+        return `
+        <div class="assignment-card priority-border-${assignment.priority}">
             <div class="assignment-header">
-                <h3>${assignment.taskType} - ${assignment.vehiclePlate}</h3>
-                <span class="priority-${assignment.priority}">${assignment.priority.toUpperCase()}</span>
+                <div>
+                    <h3>${assignment.taskType}</h3>
+                    <span class="assignment-sub">${assignment.vehiclePlate}</span>
+                </div>
+                <span class="priority-badge ${assignment.priority}">${assignment.priority}</span>
             </div>
-            <div class="assignment-details">
-                <p><strong>Assigned to:</strong> ${assignment.driverName}</p>
-                <p><strong>Description:</strong> ${assignment.description}</p>
-                <p><strong>Due Date:</strong> ${new Date(assignment.dueDate).toLocaleDateString()}</p>
-                <p><strong>Status:</strong> <span style="text-transform: capitalize;">${assignment.status}</span></p>
+            <p class="assignment-desc">${assignment.description}</p>
+            <div class="assignment-meta">
+                <span><strong>Driver:</strong> ${assignment.driverName}</span>
+                <span><strong>Due:</strong> ${new Date(assignment.dueDate).toLocaleDateString()}</span>
             </div>
-            <div class="assignment-actions">
-                <button class="btn btn-primary" onclick="updateAssignmentStatus(${assignment.id}, 'active')">Start</button>
-                <button class="btn btn-success" onclick="updateAssignmentStatus(${assignment.id}, 'completed')">Complete</button>
-                <button class="btn btn-danger" onclick="deleteAssignment(${assignment.id})">Delete</button>
+            <div class="assignment-footer">
+                ${statusBadge(assignment.status)}
+                <div class="assignment-actions">${actions.join('')}</div>
             </div>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
 }
 
 function updateAssignmentStatus(assignmentId, status) {
@@ -610,7 +665,7 @@ function addNotification(message, type = 'info') {
     };
 
     app.notifications.unshift(notification);
-    
+
     // Keep only last 50 notifications
     if (app.notifications.length > 50) {
         app.notifications = app.notifications.slice(0, 50);
@@ -628,22 +683,20 @@ function updateNotificationBadge() {
 
 function renderNotifications() {
     const list = document.getElementById('notificationsList');
-    
+
     if (app.notifications.length === 0) {
-        list.innerHTML = '<p style="text-align: center; color: var(--secondary-color); padding: 20px;">No notifications</p>';
+        list.innerHTML = emptyState('No notifications');
         return;
     }
 
     list.innerHTML = app.notifications.map((notif, index) => `
-        <div class="notification-item ${notif.type}">
+        <div class="notification-item">
+            <span class="notif-dot ${notif.type}"></span>
             <div class="notification-content">
-                <h4>${notif.type.toUpperCase()}</h4>
                 <p>${notif.message}</p>
-            </div>
-            <div style="display: flex; gap: 10px; align-items: flex-start;">
                 <span class="notification-time">${formatTime(notif.timestamp)}</span>
-                <button class="notification-close" onclick="removeNotification(${index})" title="Close">×</button>
             </div>
+            <button class="icon-btn sm" onclick="removeNotification(${index})" aria-label="Dismiss notification" title="Dismiss">${ICONS.close}</button>
         </div>
     `).join('');
 }
@@ -681,19 +734,21 @@ function updateDashboard() {
 
 function renderFleetStatus() {
     const status = document.getElementById('fleetStatus');
-    status.innerHTML = app.vehicles.map(vehicle => `
-        <div class="vehicle-status ${vehicle.status}">
-            <div>
-                <strong>${vehicle.plate}</strong> - ${vehicle.model}
-                <br><small style="color: var(--secondary-color);">${vehicle.mileage.toLocaleString()} km</small>
-            </div>
-            <span class="status-badge ${vehicle.status}">${vehicle.status}</span>
-        </div>
-    `).join('');
 
     if (app.vehicles.length === 0) {
-        status.innerHTML = '<p style="color: var(--secondary-color); text-align: center;">No vehicles in the system</p>';
+        status.innerHTML = emptyState('No vehicles in the system');
+        return;
     }
+
+    status.innerHTML = app.vehicles.map(vehicle => `
+        <div class="vehicle-status ${vehicle.status}">
+            <div class="vs-info">
+                <strong>${vehicle.plate}</strong>
+                <span>${vehicle.model} · ${vehicle.mileage.toLocaleString()} km</span>
+            </div>
+            ${statusBadge(vehicle.status)}
+        </div>
+    `).join('');
 }
 
 function renderTodayShifts() {
@@ -704,19 +759,20 @@ function renderTodayShifts() {
         return shiftDate.toDateString() === today.toDateString();
     });
 
+    if (todayShifts.length === 0) {
+        container.innerHTML = emptyState('No shifts scheduled for today');
+        return;
+    }
+
     container.innerHTML = todayShifts.map(shift => `
         <div class="shift-item ${shift.status}">
             <div class="shift-info">
                 <h4>${shift.driverName}</h4>
-                <p>${shift.vehiclePlate} - ${new Date(shift.startTime).toLocaleTimeString()} to ${new Date(shift.endTime).toLocaleTimeString()}</p>
+                <p>${shift.vehiclePlate} · ${formatShiftTime(shift)}</p>
             </div>
-            <span class="status-badge ${shift.status}">${shift.status}</span>
+            ${statusBadge(shift.status)}
         </div>
     `).join('');
-
-    if (todayShifts.length === 0) {
-        container.innerHTML = '<p style="color: var(--secondary-color); text-align: center;">No shifts scheduled for today</p>';
-    }
 }
 
 // ===== REPORTS & ANALYTICS =====
@@ -726,26 +782,26 @@ function generateCharts() {
     generateCompletionChart();
 }
 
+function metricRow(label, value, total, colorClass) {
+    const pct = total > 0 ? Math.round(value / total * 100) : 0;
+    return `
+        <div class="metric">
+            <div class="metric-row"><span>${label}</span><span>${value} · ${pct}%</span></div>
+            <div class="progress"><span class="fill ${colorClass}" style="width:${pct}%"></span></div>
+        </div>`;
+}
+
 function generateUtilizationChart() {
     const total = app.shifts.length;
     const completed = app.shifts.filter(s => s.status === 'completed').length;
     const active = app.shifts.filter(s => s.status === 'active').length;
     const scheduled = app.shifts.filter(s => s.status === 'scheduled').length;
 
-    const chart = document.getElementById('utilizationChart');
-    chart.innerHTML = `
-        <div style="width: 100%; text-align: left;">
-            <p><strong>Total Shifts:</strong> ${total}</p>
-            <div style="margin: 10px 0; background-color: #e8f5e9; padding: 8px; border-radius: 4px;">
-                <strong>Completed:</strong> ${completed} (${total > 0 ? Math.round(completed/total*100) : 0}%)
-            </div>
-            <div style="margin: 10px 0; background-color: #e3f2fd; padding: 8px; border-radius: 4px;">
-                <strong>Active:</strong> ${active}
-            </div>
-            <div style="margin: 10px 0; background-color: #fff3e0; padding: 8px; border-radius: 4px;">
-                <strong>Scheduled:</strong> ${scheduled}
-            </div>
-        </div>
+    document.getElementById('utilizationChart').innerHTML = `
+        <div class="chart-total"><span>Total Shifts</span><strong>${total}</strong></div>
+        ${metricRow('Completed', completed, total, 'success')}
+        ${metricRow('Active', active, total, 'info')}
+        ${metricRow('Scheduled', scheduled, total, 'primary')}
     `;
 }
 
@@ -755,20 +811,11 @@ function generateUsageChart() {
     const inUse = app.vehicles.filter(v => v.status === 'in-use').length;
     const maintenance = app.vehicles.filter(v => v.status === 'maintenance').length;
 
-    const chart = document.getElementById('usageChart');
-    chart.innerHTML = `
-        <div style="width: 100%; text-align: left;">
-            <p><strong>Total Vehicles:</strong> ${total}</p>
-            <div style="margin: 10px 0; background-color: #e8f5e9; padding: 8px; border-radius: 4px;">
-                <strong>Available:</strong> ${available} (${total > 0 ? Math.round(available/total*100) : 0}%)
-            </div>
-            <div style="margin: 10px 0; background-color: #e3f2fd; padding: 8px; border-radius: 4px;">
-                <strong>In Use:</strong> ${inUse}
-            </div>
-            <div style="margin: 10px 0; background-color: #ffe0b2; padding: 8px; border-radius: 4px;">
-                <strong>Maintenance:</strong> ${maintenance}
-            </div>
-        </div>
+    document.getElementById('usageChart').innerHTML = `
+        <div class="chart-total"><span>Total Vehicles</span><strong>${total}</strong></div>
+        ${metricRow('Available', available, total, 'success')}
+        ${metricRow('In Use', inUse, total, 'info')}
+        ${metricRow('Maintenance', maintenance, total, 'warning')}
     `;
 }
 
@@ -778,26 +825,19 @@ function generateCompletionChart() {
     const active = app.assignments.filter(a => a.status === 'active').length;
     const pending = app.assignments.filter(a => a.status === 'pending').length;
 
-    const chart = document.getElementById('completionChart');
-    chart.innerHTML = `
-        <div style="width: 100%; text-align: left;">
-            <p><strong>Total Assignments:</strong> ${total}</p>
-            <div style="margin: 10px 0; background-color: #e8f5e9; padding: 8px; border-radius: 4px;">
-                <strong>Completed:</strong> ${completed} (${total > 0 ? Math.round(completed/total*100) : 0}%)
-            </div>
-            <div style="margin: 10px 0; background-color: #e3f2fd; padding: 8px; border-radius: 4px;">
-                <strong>Active:</strong> ${active}
-            </div>
-            <div style="margin: 10px 0; background-color: #fff3e0; padding: 8px; border-radius: 4px;">
-                <strong>Pending:</strong> ${pending}
-            </div>
-        </div>
+    document.getElementById('completionChart').innerHTML = `
+        <div class="chart-total"><span>Total Assignments</span><strong>${total}</strong></div>
+        ${metricRow('Completed', completed, total, 'success')}
+        ${metricRow('Active', active, total, 'info')}
+        ${metricRow('Pending', pending, total, 'warning')}
     `;
 }
 
 function generateReport() {
     const startDate = new Date(document.getElementById('reportStartDate').value);
     const endDate = new Date(document.getElementById('reportEndDate').value);
+    // Include the whole end day, not just midnight
+    endDate.setHours(23, 59, 59, 999);
 
     if (!document.getElementById('reportStartDate').value || !document.getElementById('reportEndDate').value) {
         alert('Please select both start and end dates');
@@ -805,17 +845,20 @@ function generateReport() {
     }
 
     let report = '';
-    
+
     // Shifts Report
     const shiftsInRange = app.shifts.filter(s => {
         const shiftDate = new Date(s.startTime);
         return shiftDate >= startDate && shiftDate <= endDate;
     });
 
-    report += '<h4>Shifts Report</h4>';
+    report += '<h4 class="report-section-title">Shifts</h4>';
+    if (shiftsInRange.length === 0) {
+        report += '<p class="text-muted" style="padding: 8px 0; font-size: 13px;">No shifts in this range</p>';
+    }
     shiftsInRange.forEach(shift => {
         report += `<div class="report-row">
-            <span>${shift.driverName} - ${shift.vehiclePlate}</span>
+            <span>${shift.driverName} · ${shift.vehiclePlate}</span>
             <span>${new Date(shift.startTime).toLocaleDateString()}</span>
             <span>${shift.status}</span>
         </div>`;
@@ -827,16 +870,19 @@ function generateReport() {
         return assignDate >= startDate && assignDate <= endDate;
     });
 
-    report += '<h4 style="margin-top: 20px;">Assignments Report</h4>';
+    report += '<h4 class="report-section-title">Assignments</h4>';
+    if (assignmentsInRange.length === 0) {
+        report += '<p class="text-muted" style="padding: 8px 0; font-size: 13px;">No assignments in this range</p>';
+    }
     assignmentsInRange.forEach(assign => {
         report += `<div class="report-row">
-            <span>${assign.driverName} - ${assign.vehiclePlate}</span>
-            <span>${assign.taskType}</span>
+            <span>${assign.driverName} · ${assign.vehiclePlate}</span>
+            <span style="text-transform: capitalize;">${assign.taskType}</span>
             <span>${assign.status}</span>
         </div>`;
     });
 
-    document.getElementById('detailedReport').innerHTML = report || '<p style="text-align: center; color: var(--secondary-color);">No data in selected range</p>';
+    document.getElementById('detailedReport').innerHTML = report;
 }
 
 // ===== SETTINGS =====
